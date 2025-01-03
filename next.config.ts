@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === "production";
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "export",
+  basePath: isProd ? "/adhd-pomodoro-timer" : "",
+  assetPrefix: isProd ? "/adhd-pomodoro-timer/" : "",
+  trailingSlash: true,
 };
 
 export default nextConfig;
