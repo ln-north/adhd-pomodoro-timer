@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 export interface TimerProps {
   time: number; // タイマーの合計時間（秒）
   label: string;
+  description?: string;
   isSelected: boolean;
   isRunning: boolean;
   isShouldReset: boolean;
@@ -13,6 +14,7 @@ export interface TimerProps {
 export const Timer: React.FC<TimerProps> = ({
   time,
   label,
+  description,
   isSelected,
   isRunning,
   isShouldReset,
@@ -79,7 +81,12 @@ export const Timer: React.FC<TimerProps> = ({
       } ${isSelected ? "outline outline-2 outline-indigo-500" : ""}`}
     >
       <div className="flex justify-between items-center w-full z-10">
-        <span className="text-lg text-gray-700">{label}</span>
+        <div className="flex flex-col items-start">
+          <span className="text-lg text-gray-700">{label}</span>
+          {description && (
+            <span className="text-xs text-gray-500">{description}</span>
+          )}
+        </div>
         <div className="flex flex-col items-end">
           <span className="text-lg text-gray-700">
             {formatTime(currentTime)}
