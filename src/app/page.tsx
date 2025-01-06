@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Timer } from "@/components/Timer";
 import nextConfig from "../../next.config";
 const BASE_PATH = nextConfig.basePath || "";
@@ -81,6 +81,15 @@ export default function Home() {
     setIsShouldReset(true);
   };
 
+  useEffect(() => {
+    [
+      "start.mp3",
+      "pause.mp3",
+      "bell.mp3",
+      "complete.mp3"
+    ].map(s => preloadAudio(s))
+  }, [])
+
   return (
     <div
       className={`min-h-screen bg-gradient-to-br ${
@@ -143,4 +152,11 @@ const playSound = (soundFile: string) => {
   audio.play().catch((error) => {
     console.warn("Audio playback failed:", error);
   });
+};
+
+const preloadAudio = (soundFile: string): HTMLAudioElement => {
+  const audio = new Audio(`${BASE_PATH}/sounds/${soundFile}`);
+  audio.preload = 'auto';
+  audio.load();
+  return audio;
 };
