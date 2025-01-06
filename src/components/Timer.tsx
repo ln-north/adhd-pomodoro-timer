@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 
 export interface TimerProps {
-  time: number;
+  time: number; // タイマーの合計時間（秒）
   label: string;
   isSelected: boolean;
   isRunning: boolean;
   isShouldReset: boolean;
   onComplete: () => void;
-  size?: "medium" | "large"; // size プロパティを追加
+  onChangeTime: (time: number) => void;
 }
 
 export const Timer: React.FC<TimerProps> = ({
@@ -17,67 +17,87 @@ export const Timer: React.FC<TimerProps> = ({
   isRunning,
   isShouldReset,
   onComplete,
-  size = "medium",
 }) => {
   const [currentTime, setCurrentTime] = useState(time);
-  const [timerId, setTimeId] = useState<NodeJS.Timeout>();
+  const [startTime, setStartTime] = useState<number | null>(null);
 
   useEffect(() => {
-    if (isRunning) {
-      const id = setInterval(() => {
-        setCurrentTime((prevTime) => prevTime - 1);
-      }, 1000);
-      setTimeId(id);
-    } else {
-      clearInterval(timerId);
-    }
-  }, [isRunning]);
+    let intervalId: NodeJS.Timeout;
 
-  useEffect(() => {
-    if (currentTime === 0) {
-      onComplete();
+    // 開始時間との差分で経過時間を計算し、表示を更新する
+    const updateTimer = () => {
+      if (startTime !== null && isRunning && isSelected) {
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - startTime) / 1000);
+        const newTime = time - elapsedSeconds;
+
+        setCurrentTime(newTime > 0 ? newTime : 0);
+
+        // 終了
+        if (newTime <= 0) {
+          clearInterval(intervalId);
+          onComplete();
+          setStartTime(null);
+        }
+      }
+
+      if (startTime === null) {
+        setStartTime(Date.now());
+      }
+    };
+
+    // タイマー起動時
+    if (isRunning && isSelected) {
+      updateTimer(); // 初回のイベント発火
+      intervalId = setInterval(updateTimer, 10);
     }
-  }, [currentTime]);
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isRunning, isSelected, startTime]);
 
   useEffect(() => {
     if (isShouldReset) {
       setCurrentTime(time);
+      setStartTime(null);
     }
-  }, [isShouldReset]);
+  }, [isShouldReset, time]);
+
+  // 編集可能かどうか
+  const isEditable = isSelected && !isRunning && currentTime !== time;
 
   // プログレスバーの計算
   const progressPercentage = 100 - (currentTime / time) * 100;
 
   return (
     <div
-      className={`h-16 px-4 flex items-center justify-center rounded-lg transition-all duration-300 relative overflow-clip ${
-        isSelected
-          ? "bg-gray-50 outline outline-2 outline-indigo-500"
-          : "bg-gray-50 opacity-50"
-      }`}
+      className={`h-16 px-4 flex items-center justify-center rounded-lg transition-all duration-300 relative overflow-clip bg-gray-50 ${
+        !isSelected && isRunning ? "opacity-50" : ""
+      } ${isSelected ? "outline outline-2 outline-indigo-500" : ""}`}
     >
       <div className="flex justify-between items-center w-full z-10">
-        <span
-          className={`text-lg ${
-            isSelected ? "text-gray-700" : "text-gray-400"
-          }`}
-        >
-          {label}
-        </span>
-        <span
-          className={`text-lg ${
-            isSelected ? "text-gray-700" : "text-gray-400"
-          }`}
-        >
-          {formatTime(currentTime)}
-        </span>
+        <span className="text-lg text-gray-700">{label}</span>
+        <div className="flex flex-col items-end">
+          <span className="text-lg text-gray-700">
+            {formatTime(currentTime)}
+          </span>
+          {startTime && (
+            <span className="text-xs text-gray-500">
+              {formatStartTime(startTime)}
+            </span>
+          )}
+        </div>
+        {/* <button disabled={!isEditable}>編集</button> */}
       </div>
       <div
-        className={`absolute top-0 left-0 h-full -lg transition-all duration-300 ${
+        className={`absolute top-0 left-0 h-full transition-all duration-300 ${
           isSelected ? "bg-blue-200" : "bg-blue-100"
         }`}
         style={{ width: `${progressPercentage}%` }}
-      ></div>
+      />
     </div>
   );
 };
@@ -100,4 +120,13 @@ function formatTime(seconds: number) {
   }
 
   return parts.join("");
+}
+
+function formatStartTime(timestamp: number) {
+  const date = new Date(timestamp);
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+
+  return `${hours}時${minutes}分${seconds}秒`;
 }

@@ -5,12 +5,11 @@ import { Timer } from "@/components/Timer";
 import nextConfig from "../../next.config";
 const BASE_PATH = nextConfig.basePath || "";
 
-
 const isDebug = false;
 
 const defaultTimes = [
   {
-    time: isDebug ? 1 : 1 * 60,
+    time: isDebug ? 3 : 1 * 60,
     label: "やることを決める",
     sound: "bell.mp3",
     gradient: "from-orange-500 to-yellow-500",
@@ -44,10 +43,8 @@ export default function Home() {
 
   const start = () => {
     setIsRunning(true);
+    setIsStarted(true);
     playSound("start.mp3");
-    if (isStarted) {
-      setIsStarted(true);
-    }
   };
 
   const stop = () => {
@@ -66,6 +63,14 @@ export default function Home() {
       reset();
       start();
     }
+  };
+
+  const onChangeTime = (index: number) => (time: number) => {
+    setTimers((prevTimers) => {
+      const updatedTimers = [...prevTimers];
+      updatedTimers[index].time = time;
+      return updatedTimers;
+    });
   };
 
   const reset = () => {
@@ -92,9 +97,10 @@ export default function Home() {
                 time={timer.time}
                 label={timer.label}
                 isSelected={index === currentTimerIndex}
-                isRunning={isRunning && index === currentTimerIndex}
+                isRunning={isRunning}
                 isShouldReset={isShouldReset}
                 onComplete={onComplete}
+                onChangeTime={onChangeTime(index)}
               />
             </React.Fragment>
           ))}
