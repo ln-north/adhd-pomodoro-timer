@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 export interface TimerProps {
   time: number; // タイマーの合計時間（秒）
@@ -21,50 +21,73 @@ export const Timer: React.FC<TimerProps> = ({
   onComplete,
 }) => {
   const [currentTime, setCurrentTime] = useState(time);
-  const [startTime, setStartTime] = useState<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const elapsedTimeRef = useRef<number>(0);
+  const intervalIdRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
+    // タイマーのリセット処理
+    if (isShouldReset) {
+      setCurrentTime(time);
+      startTimeRef.current = null;
+      elapsedTimeRef.current = 0;
+    }
+  }, [isShouldReset, time]);
 
-    // 開始時間との差分で経過時間を計算し、表示を更新する
+  useEffect(() => {
     const updateTimer = () => {
-      if (startTime !== null && isRunning && isSelected) {
+      if (startTimeRef.current !== null) {
         const now = Date.now();
-        const elapsedSeconds = Math.floor((now - startTime) / 1000);
-        const newTime = time - elapsedSeconds;
+        const totalElapsed = elapsedTimeRef.current + (now - startTimeRef.current);
+        const remainingTime = Math.max(time - Math.floor(totalElapsed / 1000), 0);
+        setCurrentTime(remainingTime);
 
-        setCurrentTime(newTime > 0 ? newTime : 0);
-
-        // 終了
-        if (newTime <= 0) {
-          clearInterval(intervalId);
+        if (remainingTime <= 0) {
+          if (intervalIdRef.current) {
+            clearInterval(intervalIdRef.current);
+            intervalIdRef.current = null;
+          }
           onComplete();
-          setStartTime(null);
         }
-      }
-
-      if (startTime === null) {
-        setStartTime(Date.now());
       }
     };
 
-    // タイマー起動時
     if (isRunning && isSelected) {
-      updateTimer(); // 初回のイベント発火
-      intervalId = setInterval(updateTimer, 10);
+      if (startTimeRef.current === null) {
+        // タイマー開始または再開
+        startTimeRef.current = Date.now();
+      }
+      // インターバルタイマーの設定
+      if (!intervalIdRef.current) {
+        intervalIdRef.current = setInterval(updateTimer, 50);
+      }
+    } else {
+      // タイマー一時停止
+      if (startTimeRef.current !== null) {
+        const now = Date.now();
+        elapsedTimeRef.current += now - startTimeRef.current;
+        startTimeRef.current = null;
+      }
+      // インターバルタイマーのクリア
+      if (intervalIdRef.current) {
+        clearInterval(intervalIdRef.current);
+        intervalIdRef.current = null;
+      }
     }
 
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
+      // クリーンアップ
+      if (intervalIdRef.current) {
+        clearInterval(intervalIdRef.current);
+        intervalIdRef.current = null;
       }
     };
-  }, [isRunning, isSelected, startTime]);
+  }, [isRunning, isSelected, time, onComplete]);
+
 
   useEffect(() => {
     if (isShouldReset) {
       setCurrentTime(time);
-      setStartTime(null);
     }
   }, [isShouldReset, time]);
 
@@ -91,11 +114,6 @@ export const Timer: React.FC<TimerProps> = ({
           <span className="text-lg text-gray-700">
             {formatTime(currentTime)}
           </span>
-          {startTime && (
-            <span className="text-xs text-gray-500">
-              {formatStartTime(startTime)}
-            </span>
-          )}
         </div>
         {/* <button disabled={!isEditable}>編集</button> */}
       </div>

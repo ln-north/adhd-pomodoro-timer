@@ -63,41 +63,39 @@ export default function Home() {
   };
 
   const onComplete = () => {
-  if (currentTimerIndex < timers.length - 1) {
-    // 現在のタイマー情報を取得
-    const completedTimer = timers[currentTimerIndex];
+    if (currentTimerIndex < timers.length - 1) {
+      // 現在のタイマー情報を取得
+      const completedTimer = timers[currentTimerIndex];
 
-    // ログを更新
-    setLogs((prevLogs) => [
-      ...prevLogs,
-      {
-        label: completedTimer.label,
-        type: completedTimer.type,
-        time: completedTimer.time,
-        comment: commentRef.current,
-      },
-    ]);
+      // ログを更新
+      setLogs((prevLogs) => [
+        ...prevLogs,
+        {
+          label: completedTimer.label,
+          type: completedTimer.type,
+          time: completedTimer.time,
+          comment: commentRef.current,
+        },
+      ]);
 
-    // コメントをリセット
-    setComment("");
-    commentRef.current = "";
+      // コメントをリセット
+      setComment("");
+      commentRef.current = "";
 
-    // タイマーのインデックスを更新
-    setCurrentTimerIndex((prevIndex) => prevIndex + 1);
+      // タイマーのインデックスを更新
+      setCurrentTimerIndex((prevIndex) => prevIndex + 1);
 
-    // サウンドを再生
-    playSound(completedTimer.sound);
+      // サウンドを再生
+      playSound(completedTimer.sound);
 
-    if (isShouldReset) {
-      setIsShouldReset(false);
+      if (isShouldReset) {
+        setIsShouldReset(false);
+      }
+    } else {
+      reset();
+      start();
     }
-  } else {
-    reset();
-    start();
-  }
-};
-
-
+  };
 
   const onChangeTime = (index: number) => (time: number) => {
     setTimers((prevTimers) => {
@@ -129,11 +127,6 @@ export default function Home() {
       ("コメントを入力");
     }
   };
-
-  useEffect(() => {
-    console.log("comment", comment);
-    console.log("commentRef.current", commentRef.current);
-  }, [comment])
 
   useEffect(() => {
     ["start.mp3", "pause.mp3", "bell.mp3", "complete.mp3"].map((s) =>
